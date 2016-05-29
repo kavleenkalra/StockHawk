@@ -19,6 +19,7 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 import com.afollestad.materialdialogs.MaterialDialog;
 import com.sam_chordas.android.stockhawk.R;
@@ -52,6 +53,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
   private Context mContext;
   private Cursor mCursor;
   boolean isConnected;
+  private TextView noNetworkView;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -64,16 +66,23 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     isConnected = activeNetwork != null &&
         activeNetwork.isConnectedOrConnecting();
     setContentView(R.layout.activity_my_stocks);
+    noNetworkView=(TextView) findViewById(R.id.text_view_no_network);
+
     // The intent service is for executing immediate pulls from the Yahoo API
     // GCMTaskService can only schedule tasks, they cannot execute immediately
     mServiceIntent = new Intent(this, StockIntentService.class);
     if (savedInstanceState == null){
       // Run the initialize task service so that some stocks appear upon an empty database
       mServiceIntent.putExtra("tag", "init");
-      if (isConnected){
+      if (isConnected)
+      {
         startService(mServiceIntent);
-      } else{
+        noNetworkView.setVisibility(View.GONE);
+      }
+      else
+      {
         networkToast();
+        noNetworkView.setVisibility(View.VISIBLE);
       }
     }
     RecyclerView recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
@@ -81,11 +90,12 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
     getLoaderManager().initLoader(CURSOR_LOADER_ID, null, this);
 
     mCursorAdapter = new QuoteCursorAdapter(this, null);
-    recyclerView.addOnItemTouchListener(new RecyclerViewItemClickListener(this,
-            new RecyclerViewItemClickListener.OnItemClickListener() {
-              @Override public void onItemClick(View v, int position) {
-                //TODO:
-                // do something on item click
+    recyclerView.addOnItemTouchListener(new RecyclerViewItemClickListener(this, new RecyclerViewItemClickListener.OnItemClickListener() {
+              @Override public void onItemClick(View v, int position)
+              {
+                TextView textView=(TextView) v.findViewById(R.id.stock_symbol);
+                Intent intent=new Intent(getApplicationContext(),StocksDetailActivity.class).putExtra("SYMBOL",textView.getText().toString());
+                startActivity(intent);
               }
             }));
     recyclerView.setAdapter(mCursorAdapter);
@@ -108,7 +118,7 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
                       new String[] { input.toString() }, null);
                   if (c.getCount() != 0) {
                     Toast toast =
-                        Toast.makeText(MyStocksActivity.this, "This stock is already saved!",
+                        Toast.makeText(MyStocksActivity.this, getString(R.string.search_toast),
                             Toast.LENGTH_LONG);
                     toast.setGravity(Gravity.CENTER, Gravity.CENTER, 0);
                     toast.show();
@@ -122,8 +132,10 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
                 }
               })
               .show();
-        } else {
+        } else
+        {
           networkToast();
+          noNetworkView.setVisibility(View.VISIBLE);
         }
 
       }

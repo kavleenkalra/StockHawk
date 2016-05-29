@@ -1,7 +1,10 @@
 package com.sam_chordas.android.stockhawk.rest;
 
 import android.content.ContentProviderOperation;
+import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
+
 import com.sam_chordas.android.stockhawk.data.QuoteColumns;
 import com.sam_chordas.android.stockhawk.data.QuoteProvider;
 import java.util.ArrayList;
@@ -12,7 +15,9 @@ import org.json.JSONObject;
 /**
  * Created by sam_chordas on 10/8/15.
  */
-public class Utils {
+public class Utils
+{
+  public static Boolean SYMBOL_NOT_FOUND=false;
 
   private static String LOG_TAG = Utils.class.getSimpleName();
 
@@ -27,11 +32,24 @@ public class Utils {
       if (jsonObject != null && jsonObject.length() != 0){
         jsonObject = jsonObject.getJSONObject("query");
         int count = Integer.parseInt(jsonObject.getString("count"));
-        if (count == 1){
-          jsonObject = jsonObject.getJSONObject("results")
-              .getJSONObject("quote");
-          batchOperations.add(buildBatchOperation(jsonObject));
-        } else{
+        if (count == 1)
+        {
+          jsonObject = jsonObject.getJSONObject("results").getJSONObject("quote");
+          String myBid=jsonObject.getString("Bid");
+
+          if(myBid.equals("null"))
+          {
+            //display a toast.
+            SYMBOL_NOT_FOUND=true;
+          }
+          else
+          {
+            SYMBOL_NOT_FOUND=false;
+            batchOperations.add(buildBatchOperation(jsonObject));
+          }
+        }
+        else
+        {
           resultsArray = jsonObject.getJSONObject("results").getJSONArray("quote");
 
           if (resultsArray != null && resultsArray.length() != 0){
